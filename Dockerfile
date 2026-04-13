@@ -15,6 +15,7 @@ RUN npm ci
 
 # Copy source code
 COPY app/ ./app/
+COPY components/ ./components/
 COPY hooks/ ./hooks/
 COPY lib/ ./lib/
 COPY public/ ./public/
