@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Leaderboard, type LeaderboardEntry } from "@/components/Leaderboard";
+import { ChallengeChoiceModal } from "@/components/ChallengeChoiceModal";
 import { CodeLanguageModal } from "@/components/CodeLanguageModal";
 import { NameInput } from "@/components/NameInput";
 import { ResultModal } from "@/components/ResultModal";
@@ -33,11 +34,13 @@ function pickChallenge(pool: string[], recent: string[]): string {
 export default function Page() {
   const [name, setName] = useState("");
   const [selectedChallenge, setSelectedChallenge] = useState<"paragraph" | CodeLanguage | null>(null);
+  const [challengeChoiceOpen, setChallengeChoiceOpen] = useState(false);
   const [codeModalOpen, setCodeModalOpen] = useState(false);
   const [selectedLanguage, setSelectedLanguage] = useState<CodeLanguage | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [latestRun, setLatestRun] = useState<FinalScorePayload | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
+  const nameInputRef = useRef<HTMLInputElement | null>(null);
   const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const hasSubmittedRef = useRef(false);
   const recentChallengesRef = useRef<Record<ChallengeKey, string[]>>({
@@ -106,6 +109,7 @@ export default function Page() {
     setResultOpen(false);
     hasSubmittedRef.current = false;
     setCodeModalOpen(false);
+    setChallengeChoiceOpen(false);
 
     requestAnimationFrame(() => {
       inputRef.current?.focus();
@@ -116,29 +120,29 @@ export default function Page() {
     startNewGame("paragraph");
   }, [startNewGame]);
 
+  const openChallengeChoice = useCallback(() => {
+    if (name.trim().length < 2 || phase !== "idle") {
+      return;
+    }
+
+    setChallengeChoiceOpen(true);
+  }, [name, phase]);
+
   const openCodeModal = useCallback(() => {
     if (name.trim().length < 2 || phase !== "idle") {
       return;
     }
 
-    setSelectedChallenge(null);
     setSelectedLanguage(null);
+    setChallengeChoiceOpen(false);
     setCodeModalOpen(true);
   }, [name, phase]);
-
-  const startCodeRound = useCallback(() => {
-    if (!selectedLanguage) {
-      return;
-    }
-
-    startNewGame(selectedLanguage);
-    setSelectedLanguage(null);
-  }, [selectedLanguage, startNewGame]);
 
   const returnToLobby = useCallback(() => {
     resetGame();
     setName("");
     setSelectedChallenge(null);
+    setChallengeChoiceOpen(false);
     setSelectedLanguage(null);
     setCodeModalOpen(false);
     setLatestRun(null);
@@ -171,6 +175,14 @@ export default function Page() {
     }
   }, [phase]);
 
+  useEffect(() => {
+    if (phase === "idle") {
+      requestAnimationFrame(() => {
+        nameInputRef.current?.focus();
+      });
+    }
+  }, [phase, codeModalOpen, challengeChoiceOpen]);
+
   const rank = useMemo(() => {
     if (!latestRun) {
       return null;
@@ -191,7 +203,6 @@ export default function Page() {
     selectedChallenge && selectedChallenge !== "paragraph"
       ? selectedChallenge
       : "python";
-  const hasParagraphSelected = selectedChallenge === "paragraph";
 
   const isImmersive = phase !== "idle" && phase !== "finished";
 
@@ -252,11 +263,9 @@ export default function Page() {
               <NameInput
                 name={name}
                 onNameChange={setName}
-                hasParagraphSelected={hasParagraphSelected}
-                onSelectParagraph={() => setSelectedChallenge("paragraph")}
-                onSelectCode={openCodeModal}
-                onStartParagraph={startParagraphRound}
+                onSubmit={openChallengeChoice}
                 isRunning={phase !== "idle"}
+                inputRef={nameInputRef}
               />
 
               <TypingArea
@@ -293,13 +302,22 @@ export default function Page() {
       <CodeLanguageModal
         open={codeModalOpen}
         selectedLanguage={selectedLanguage}
-        onSelectLanguage={setSelectedLanguage}
-        onStart={startCodeRound}
+        onSelectLanguage={(languageChoice) => {
+          setSelectedLanguage(languageChoice);
+          setSelectedChallenge(languageChoice);
+          startNewGame(languageChoice);
+        }}
         onClose={() => {
           setSelectedLanguage(null);
           setCodeModalOpen(false);
         }}
-        isStarting={phase !== "idle"}
+      />
+
+      <ChallengeChoiceModal
+        open={challengeChoiceOpen}
+        onSelectParagraph={() => startParagraphRound()}
+        onSelectCode={openCodeModal}
+        onClose={() => setChallengeChoiceOpen(false)}
       />
     </main>
   );

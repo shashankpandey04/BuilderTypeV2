@@ -1,14 +1,13 @@
 "use client";
 
+import { useEffect } from "react";
 import type { CodeLanguage } from "@/lib/codeSnippets";
 
 type CodeLanguageModalProps = {
   open: boolean;
   selectedLanguage: CodeLanguage | null;
   onSelectLanguage: (language: CodeLanguage) => void;
-  onStart: () => void;
   onClose: () => void;
-  isStarting: boolean;
 };
 
 const languageOptions: Array<{ value: CodeLanguage; label: string; description: string }> = [
@@ -37,10 +36,27 @@ export function CodeLanguageModal({
   open,
   selectedLanguage,
   onSelectLanguage,
-  onStart,
   onClose,
-  isStarting,
 }: CodeLanguageModalProps) {
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [onClose, open]);
+
   if (!open) {
     return null;
   }
@@ -105,17 +121,8 @@ export function CodeLanguageModal({
 
         <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-white/60">
-            {selectedLanguage ? `Selected: ${languageLabels[selectedLanguage]}` : "Select a language to continue."}
+            {selectedLanguage ? `Selected: ${languageLabels[selectedLanguage]}. Starting now.` : "Select a language to start."}
           </p>
-
-          <button
-            type="button"
-            onClick={onStart}
-            disabled={!selectedLanguage || isStarting}
-            className="h-12 rounded-xl bg-white px-6 text-sm font-semibold uppercase tracking-wide text-[rgb(22,29,38)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            Start Code Round
-          </button>
         </div>
       </div>
     </div>
