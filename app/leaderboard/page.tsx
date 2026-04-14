@@ -23,12 +23,12 @@ export default function LeaderboardPage() {
   }, []);
 
   return (
-    <main className="min-h-screen px-4 py-6 md:px-8">
-      <div className="mx-auto flex min-h-[calc(100vh-3rem)] max-w-7xl flex-col rounded-3xl border border-cyan-500/20 bg-slate-950/45 p-5 shadow-[0_40px_140px_-70px_rgba(6,182,212,0.55)] backdrop-blur md:p-8">
+    <main className="px-4 py-6 md:px-8 md:py-8">
+      <div className="mx-auto flex max-w-350 flex-col rounded-3xl border border-white/12 bg-[rgb(22,29,38)]/88 p-5 shadow-[0_40px_140px_-80px_rgba(0,0,0,0.92)] backdrop-blur md:p-8">
         <Leaderboard entries={entries} variant="display" />
 
-        <footer className="mt-6 border-t border-slate-800 pt-4 text-sm text-slate-400">
-          <Link href="/" className="text-cyan-300 transition hover:text-cyan-200">
+        <footer className="mt-6 border-t border-white/12 pt-4 text-sm text-white/70">
+          <Link href="/" className="text-[rgb(191,128,255)] transition hover:text-white">
             Back to game screen
           </Link>
         </footer>

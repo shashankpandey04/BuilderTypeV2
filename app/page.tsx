@@ -2,10 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Leaderboard, type LeaderboardEntry } from "@/components/Leaderboard";
+import { CodeLanguageModal } from "@/components/CodeLanguageModal";
 import { NameInput } from "@/components/NameInput";
 import { ResultModal } from "@/components/ResultModal";
 import { TypingArea } from "@/components/TypingArea";
 import { useTypingEngine } from "@/hooks/useTypingEngine";
+import { codeSnippetsByLanguage, type CodeLanguage } from "@/lib/codeSnippets";
 import { paragraphs } from "@/lib/paragraphs";
 import { getSocket } from "@/lib/socket";
 
@@ -16,13 +18,39 @@ type FinalScorePayload = {
   timestamp: string;
 };
 
+type TypingMode = "paragraph" | "code";
+
+type ChallengeKey = "paragraph" | CodeLanguage;
+
+const RECENT_CHALLENGE_LIMIT = 4;
+
+function pickChallenge(pool: string[], recent: string[]): string {
+  const available = pool.filter((candidate) => !recent.includes(candidate));
+  const source = available.length > 0 ? available : pool;
+  return source[Math.floor(Math.random() * source.length)];
+}
+
 export default function Page() {
   const [name, setName] = useState("");
+  const [selectedChallenge, setSelectedChallenge] = useState<"paragraph" | CodeLanguage | null>(null);
+  const [codeModalOpen, setCodeModalOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<CodeLanguage | null>(null);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [latestRun, setLatestRun] = useState<FinalScorePayload | null>(null);
   const [resultOpen, setResultOpen] = useState(false);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputRef = useRef<HTMLTextAreaElement | null>(null);
   const hasSubmittedRef = useRef(false);
+  const recentChallengesRef = useRef<Record<ChallengeKey, string[]>>({
+    paragraph: [],
+    java: [],
+    cpp: [],
+    python: [],
+    javascript: [],
+    go: [],
+    rust: [],
+    php: [],
+    csharp: [],
+  });
 
   const handleFinish = useCallback(
     (result: { wpm: number; accuracy: number }) => {
@@ -58,21 +86,61 @@ export default function Page() {
     resetGame,
   } = useTypingEngine({ duration: 45, onFinish: handleFinish });
 
-  const startNewGame = useCallback(() => {
-    const randomParagraph = paragraphs[Math.floor(Math.random() * paragraphs.length)];
-    startGame(randomParagraph);
+  const startNewGame = useCallback((challenge: "paragraph" | CodeLanguage) => {
+    if (!name.trim()) {
+      return;
+    }
+
+    const challengeKey: ChallengeKey = challenge;
+    const source = challenge === "paragraph" ? paragraphs : codeSnippetsByLanguage[challenge];
+    const nextText = pickChallenge(source, recentChallengesRef.current[challengeKey]);
+
+    recentChallengesRef.current[challengeKey] = [
+      ...recentChallengesRef.current[challengeKey],
+      nextText,
+    ].slice(-RECENT_CHALLENGE_LIMIT);
+
+    setSelectedChallenge(challenge);
+    startGame(nextText);
     setLatestRun(null);
     setResultOpen(false);
     hasSubmittedRef.current = false;
+    setCodeModalOpen(false);
 
     requestAnimationFrame(() => {
       inputRef.current?.focus();
     });
-  }, [startGame]);
+  }, [name, startGame]);
+
+  const startParagraphRound = useCallback(() => {
+    startNewGame("paragraph");
+  }, [startNewGame]);
+
+  const openCodeModal = useCallback(() => {
+    if (name.trim().length < 2 || phase !== "idle") {
+      return;
+    }
+
+    setSelectedChallenge(null);
+    setSelectedLanguage(null);
+    setCodeModalOpen(true);
+  }, [name, phase]);
+
+  const startCodeRound = useCallback(() => {
+    if (!selectedLanguage) {
+      return;
+    }
+
+    startNewGame(selectedLanguage);
+    setSelectedLanguage(null);
+  }, [selectedLanguage, startNewGame]);
 
   const returnToLobby = useCallback(() => {
     resetGame();
     setName("");
+    setSelectedChallenge(null);
+    setSelectedLanguage(null);
+    setCodeModalOpen(false);
     setLatestRun(null);
     setResultOpen(false);
     hasSubmittedRef.current = false;
@@ -118,54 +186,100 @@ export default function Page() {
     return matchIndex >= 0 ? matchIndex + 1 : null;
   }, [latestRun, leaderboard]);
 
+  const mode: TypingMode | null = selectedChallenge === null ? null : selectedChallenge === "paragraph" ? "paragraph" : "code";
+  const language: CodeLanguage =
+    selectedChallenge && selectedChallenge !== "paragraph"
+      ? selectedChallenge
+      : "python";
+  const hasParagraphSelected = selectedChallenge === "paragraph";
+
   const isImmersive = phase !== "idle" && phase !== "finished";
 
   return (
-    <main className={isImmersive ? "min-h-screen px-4 py-6 md:px-8" : "mx-auto grid min-h-screen w-full max-w-7xl gap-6 px-4 py-8 md:grid-cols-[1fr_360px] md:px-8"}>
+    <main className={isImmersive ? "px-4 py-6 md:px-8" : "px-4 py-6 md:px-8 md:py-8"}>
       {isImmersive ? (
-        <section className="mx-auto flex min-h-[calc(100vh-3rem)] w-full max-w-5xl flex-col justify-center">
-          <TypingArea
-            text={text || "Press Start Game to load a random challenge paragraph."}
-            input={input}
-            timeLeft={timeLeft}
-            countdownLeft={countdownLeft}
-            wpm={result.wpm}
-            accuracy={result.accuracy}
-            phase={phase}
-            onInputChange={setInput}
-            inputRef={inputRef}
-          />
-        </section>
-      ) : (
-        <>
-          <section className="space-y-5">
-            <header className="rounded-2xl border border-cyan-500/20 bg-slate-900/60 p-6 shadow-[0_30px_120px_-60px_rgba(6,182,212,0.65)]">
-              <p className="text-xs uppercase tracking-[0.2em] text-cyan-300">Typing Arena</p>
-              <h1 className="mt-2 text-4xl font-bold tracking-tight text-white sm:text-5xl">
-                BuilderType
-              </h1>
-              <p className="mt-3 max-w-2xl text-sm text-slate-300">
-                Type with speed and precision. Every completed run syncs instantly across all event systems.
-              </p>
-            </header>
-
-            <NameInput name={name} onNameChange={setName} onStart={startNewGame} isRunning={phase !== "idle"} />
-
+        <section className="mx-auto w-full max-w-6xl">
+          <div className="rounded-3xl border border-white/12 bg-[rgb(22,29,38)]/85 p-4 shadow-[0_28px_100px_-60px_rgba(0,0,0,0.8)] md:p-7">
             <TypingArea
-              text={text || "Press Start Game to load a random challenge paragraph."}
+              text={text || "Press Start Game to load your challenge text."}
               input={input}
               timeLeft={timeLeft}
               countdownLeft={countdownLeft}
               wpm={result.wpm}
               accuracy={result.accuracy}
               phase={phase}
+              mode={mode}
+              language={language}
               onInputChange={setInput}
               inputRef={inputRef}
             />
+          </div>
+        </section>
+      ) : (
+        <div className="mx-auto w-full max-w-350 space-y-6">
+          <section className="rounded-3xl border border-white/12 bg-[rgb(22,29,38)]/88 p-6 shadow-[0_30px_110px_-70px_rgba(0,0,0,0.9)] md:p-8">
+            <div className="grid gap-8 lg:grid-cols-[1.05fr_1fr] lg:items-center">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-[rgb(191,128,255)]">Builder Center</p>
+                <h1 className="mt-3 text-4xl font-bold tracking-tight text-white md:text-6xl">
+                  Your speed.
+                  <br />
+                  Your precision.
+                  <br />
+                  Your BuilderType.
+                </h1>
+                <p className="mt-5 max-w-2xl text-base leading-relaxed text-white/80">
+                  Connect with builders in real time. Launch a 45 second sprint, submit your run,
+                  and watch the leaderboard update instantly across every connected screen.
+                </p>
+              </div>
+
+              <div className="relative min-h-70 overflow-hidden rounded-2xl border border-white/12 bg-[rgb(22,29,38)]/95 p-4">
+                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.09)_1px,transparent_1px)] bg-size-[37px_37px]" />
+                <div className="relative h-full w-full">
+                  <div className="absolute left-[8%] top-[44%] h-24 w-28 bg-[rgb(191,128,255)]" />
+                  <div className="absolute left-[38%] top-[56%] h-16 w-16 bg-[rgb(191,128,255)]/85" />
+                  <div className="absolute left-[57%] top-[12%] h-28 w-28 bg-[rgb(191,128,255)]/75" />
+                  <div className="absolute left-[69%] top-[44%] h-36 w-36 bg-[rgb(191,128,255)]/55" />
+                  <div className="absolute left-[48%] top-[44%] h-9 w-9 bg-[rgb(191,128,255)]/95" />
+                </div>
+              </div>
+            </div>
           </section>
 
-          <Leaderboard entries={leaderboard} />
-        </>
+          <section className="grid gap-6 xl:grid-cols-[1fr_360px]">
+            <div className="space-y-5">
+              <NameInput
+                name={name}
+                onNameChange={setName}
+                hasParagraphSelected={hasParagraphSelected}
+                onSelectParagraph={() => setSelectedChallenge("paragraph")}
+                onSelectCode={openCodeModal}
+                onStartParagraph={startParagraphRound}
+                isRunning={phase !== "idle"}
+              />
+
+              <TypingArea
+                text={
+                  text ||
+                  "Enter your name, choose paragraph or code mode, then press Start Game to load your challenge."
+                }
+                input={input}
+                timeLeft={timeLeft}
+                countdownLeft={countdownLeft}
+                wpm={result.wpm}
+                accuracy={result.accuracy}
+                phase={phase}
+                mode={mode}
+                language={language}
+                onInputChange={setInput}
+                inputRef={inputRef}
+              />
+            </div>
+
+            <Leaderboard entries={leaderboard} />
+          </section>
+        </div>
       )}
 
       <ResultModal
@@ -174,6 +288,18 @@ export default function Page() {
         accuracy={latestRun?.accuracy ?? result.accuracy}
         rank={rank}
         onPlayAgain={returnToLobby}
+      />
+
+      <CodeLanguageModal
+        open={codeModalOpen}
+        selectedLanguage={selectedLanguage}
+        onSelectLanguage={setSelectedLanguage}
+        onStart={startCodeRound}
+        onClose={() => {
+          setSelectedLanguage(null);
+          setCodeModalOpen(false);
+        }}
+        isStarting={phase !== "idle"}
       />
     </main>
   );
