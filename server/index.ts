@@ -29,13 +29,13 @@ function normalizeLeaderboard(entries: ScorePayload[]) {
 
       return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
     })
-    .slice(0, 10);
+    .slice(0, 20);
 }
 
 async function hydrateLeaderboard() {
   const topScores = await Score.find({}, { _id: 0, __v: 0 })
     .sort({ wpm: -1, createdAt: 1 })
-    .limit(10)
+    .limit(20)
     .lean();
 
   leaderboard = normalizeLeaderboard(

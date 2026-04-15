@@ -245,15 +245,17 @@ export default function Page() {
                 </p>
               </div>
 
-              <div className="relative min-h-70 overflow-hidden rounded-2xl border border-white/12 bg-[rgb(22,29,38)]/95 p-4">
-                <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.09)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.09)_1px,transparent_1px)] bg-size-[37px_37px]" />
-                <div className="relative h-full w-full">
-                  <div className="absolute left-[8%] top-[44%] h-24 w-28 bg-[rgb(191,128,255)]" />
-                  <div className="absolute left-[38%] top-[56%] h-16 w-16 bg-[rgb(191,128,255)]/85" />
-                  <div className="absolute left-[57%] top-[12%] h-28 w-28 bg-[rgb(191,128,255)]/75" />
-                  <div className="absolute left-[69%] top-[44%] h-36 w-36 bg-[rgb(191,128,255)]/55" />
-                  <div className="absolute left-[48%] top-[44%] h-9 w-9 bg-[rgb(191,128,255)]/95" />
-                </div>
+              <div className="relative w-full overflow-hidden bg-[rgb(20,26,35)]" style={{ aspectRatio: '790/420' }}>
+                <div className="absolute inset-0"
+                  style={{
+                    backgroundImage: 'linear-gradient(rgba(255,255,255,0.07) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.07) 1px, transparent 1px)',
+                    backgroundSize: 'calc(100%/18) calc(100%/10)'
+                  }} />
+                <div className="absolute" style={{ left:'calc(100%/18*1)', top:'calc(100%/10*3.8)', width:'calc(100%/18*3.2)', height:'calc(100%/10*3.8)', background:'linear-gradient(145deg,#ff18b0,#e010a8)' }} />
+                <div className="absolute" style={{ left:'calc(100%/18*5.5)', top:'calc(100%/10*5.5)', width:'calc(100%/18*2.5)', height:'calc(100%/10*2.8)', background:'linear-gradient(145deg,#c050d4,#a840bc)' }} />
+                <div className="absolute" style={{ left:'calc(100%/18*8)', top:'calc(100%/10*5.5)', width:'calc(100%/18*1)', height:'calc(100%/10*1.1)', background:'linear-gradient(145deg,#a040b8,#9035ae)' }} />
+                <div className="absolute" style={{ left:'calc(100%/18*8)', top:'calc(100%/10*0.9)', width:'calc(100%/18*3)', height:'calc(100%/10*4.6)', background:'linear-gradient(145deg,#9b72dc,#7e5cc4)' }} />
+                <div className="absolute" style={{ left:'calc(100%/18*12.5)', top:'calc(100%/10*3.8)', width:'calc(100%/18*5.5)', height:'calc(100%/10*5)', background:'linear-gradient(145deg,#7b72dc,#5e99e8)' }} />
               </div>
             </div>
           </section>
