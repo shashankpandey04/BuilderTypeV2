@@ -71,12 +71,10 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
         >
           {collapsed ? (
             <nav className="flex flex-col items-center gap-1 px-2 py-6">
-              {/* Home icon */}
               <Link
                 href="/"
                 title="Home"
-                className="flex h-9 w-9 items-center justify-center rounded-md bg-[rgb(191,128,255)] text-[rgb(22,29,38)]"
-              >
+                className="flex h-9 w-9 items-center justify-center rounded-md text-white/60 transition hover:bg-white/8 hover:text-[rgb(191,128,255)]">
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                   <path d="M7.5 1L1 6.5V14h4.5v-4h4v4H14V6.5L7.5 1Z" fill="currentColor"/>
                 </svg>
@@ -84,7 +82,7 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
               <Link
                 href="/leaderboard"
                 title="Leaderboard"
-                className="flex h-9 w-9 items-center justify-center rounded-md text-white/60 transition hover:bg-white/8 hover:text-white"
+                className="flex h-9 w-9 items-center justify-center rounded-md text-white/60 transition hover:bg-white/8 hover:text-[rgb(191,128,255)]"
               >
                 <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
                   <rect x="1" y="8" width="3" height="6" rx="1" fill="currentColor"/>
@@ -99,13 +97,13 @@ export function SidebarLayout({ children }: { children: React.ReactNode }) {
                 <p className="px-2 text-xs uppercase tracking-[0.2em] text-white/50">Main</p>
                 <Link
                   href="/"
-                  className="block rounded-md bg-[rgb(191,128,255)] px-3 py-2 text-sm font-semibold text-[rgb(22,29,38)]"
+                  className="block rounded-md px-3 py-2 text-sm text-white/75 transition hover:bg-[rgb(191,128,255)] hover:text-black"
                 >
                   Home
                 </Link>
                 <Link
                   href="/leaderboard"
-                  className="block rounded-md px-3 py-2 text-sm text-white/75 transition hover:bg-white/5 hover:text-white"
+                  className="block rounded-md px-3 py-2 text-sm text-white/75 transition hover:bg-[rgb(191,128,255)] hover:text-black"
                 >
                   Leaderboard
                 </Link>
